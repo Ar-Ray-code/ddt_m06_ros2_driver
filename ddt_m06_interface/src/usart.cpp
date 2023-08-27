@@ -21,7 +21,7 @@ MotorHandler::MotorHandler(int serial_port) : serial_port_(serial_port)
 
 
 
-void MotorHandler::Control_Motor(uint16_t Speed, uint8_t ID, uint8_t Acce, uint8_t Brake_P, Receiver *Receiver)
+void MotorHandler::Control_Motor(uint16_t Speed, uint8_t ID, uint8_t Acce, uint8_t Brake_P,  Received &receiver)
 {
   this->Tx[0] = ID;
   this->Tx[1] = 0x64;
@@ -36,14 +36,14 @@ void MotorHandler::Control_Motor(uint16_t Speed, uint8_t ID, uint8_t Acce, uint8
   Send_Motor();
 
   Receive_Motor();
-  Receiver->BMode = this->Rx[1];
-  Receiver->ECurru = (this->Rx[2] << 8) + this->Rx[3];
-  Receiver->BSpeed = (this->Rx[4] << 8) + this->Rx[5];
-  Receiver->Position = (this->Rx[6] << 8) + this->Rx[7];
-  Receiver->ErrCode = this->Rx[8];
+  receiver.BMode = this->Rx[1];
+  receiver.ECurrent = (this->Rx[2] << 8) + this->Rx[3];
+  receiver.BSpeed = (this->Rx[4] << 8) + this->Rx[5];
+  receiver.Position = (this->Rx[6] << 8) + this->Rx[7];
+  receiver.ErrCode = this->Rx[8];
 }
 
-void MotorHandler::Get_Motor(uint8_t ID, Receiver *Receiver)
+void MotorHandler::Get_Motor(uint8_t ID, Received &receiver)
 {
   Tx[0] = ID;
   Tx[1] = 0x74;
@@ -58,24 +58,12 @@ void MotorHandler::Get_Motor(uint8_t ID, Receiver *Receiver)
   Send_Motor();
 
   Receive_Motor();
-  Receiver->BMode = Rx[1];
-  Receiver->ECurru = (Rx[2] << 8) + Rx[3];
-  // printf("High: %2d Low: %2d\n", Rx[2], Rx[3]);
-  if (Receiver->ECurru >= 0x4000)
-  {
-    // printf("ECurru: %d\n", Receiver->ECurru);
-    Receiver->ECurru = Receiver->ECurru - 0x7f7f;
-  }
-  Receiver->BSpeed = (Rx[4] << 7) + Rx[5];
-  // printf("High: %2d Low: %2d\n", Rx[4], Rx[5]);
-  if (Receiver->BSpeed >= 0x4000)
-  {
-    // printf("BSpeed: %d\n", Receiver->BSpeed);
-    Receiver->BSpeed = Receiver->BSpeed - 0x7f7f;
-  }
-  Receiver->Temp = Rx[6];
-  Receiver->Position = Rx[7];
-  Receiver->ErrCode = Rx[8];
+  receiver.BMode = Rx[1];
+  receiver.ECurrent = (Rx[2] << 8) + Rx[3];
+  receiver.BSpeed = (Rx[4] << 8) + Rx[5];
+  receiver.Temp = Rx[6];
+  receiver.Position = Rx[7];
+  receiver.ErrCode = Rx[8];
 }
 
 void MotorHandler::Set_MotorMode(uint8_t Mode, uint8_t ID)
@@ -108,7 +96,7 @@ void MotorHandler::Set_MotorID(uint8_t ID)
   Send_Motor();
 }
 
-void MotorHandler::Check_Motor(Receiver *Receiver)
+void MotorHandler::Check_Motor(Received &receiver)
 {
   Tx[0] = 0xc8;
   Tx[1] = 0x64;
@@ -124,30 +112,20 @@ void MotorHandler::Check_Motor(Receiver *Receiver)
   Send_Motor();
   Receive_Motor();
 
-  Receiver->BMode = Rx[1];
-  Receiver->ECurru = (Rx[2] << 8) + Rx[3];
-  if (Receiver->ECurru >= 0x4000)
-  {
-    Receiver->ECurru = Receiver->ECurru - 0x7ff;
-  }
-  Receiver->BSpeed = (Rx[4] << 8) + Rx[5];
-  if (Receiver->BSpeed >= 0x4000)
-  {
-    Receiver->BSpeed = Receiver->BSpeed - 0x7ff;
-  }
-  Receiver->Position = (Rx[6] << 8) + Rx[7];
-  Receiver->ErrCode = Rx[8];
+  receiver.BMode = Rx[1];
+  receiver.ECurrent = (Rx[2] << 8) + Rx[3];
+  receiver.BSpeed = (Rx[4] << 8) + Rx[5];
+  receiver.Position = (Rx[6] << 8) + Rx[7];
+  receiver.ErrCode = Rx[8];
 }
 
 void MotorHandler::Send_Motor()
 {
-  // printf("Write To port %d\n", this->serial_port_);
   write(this->serial_port_, Tx.data(), 10);
 }
 
 void MotorHandler::Receive_Motor()
 {
-  // printf("Read From port %d\n", this->serial_port_);
   int num_byte = read(this->serial_port_, Rx.data(), 10);
   if (num_byte < 0)
   {
@@ -159,9 +137,6 @@ void MotorHandler::Receive_Motor()
 unsigned char MotorHandler::CRC8_Table(uint8_t *p, int counter)
 {
   unsigned char crc8 = 0;
-  // Model:CRC-8/MAXIM
-  // polynomial x8 + x5 + x4 + 1
-
   for (; counter > 0; counter--)
   {
     crc8 = CRC8Table[crc8 ^ *p];

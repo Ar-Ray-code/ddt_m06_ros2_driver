@@ -30,7 +30,7 @@
 typedef struct Received
 {
   uint8_t Temp;      // Temp of motor
-  uint16_t ECurru;   // electric current of motor
+  uint16_t ECurrent;   // electric current of motor
   int16_t BSpeed;    // FeedBack Speed of motor
   uint16_t ErrCode;  // Fault code of motor
   uint8_t BMode;     // Feedback Mode of motor
@@ -65,11 +65,11 @@ private:
 
 public:
   MotorHandler(int serial_port);
-  void Control_Motor(uint16_t Speed, uint8_t ID, uint8_t Acce, uint8_t Brake_P, Receiver *Receiver);
-  void Get_Motor(uint8_t ID, Receiver *Receiver);
+  void Control_Motor(uint16_t Speed, uint8_t ID, uint8_t Acce, uint8_t Brake_P, Received &receiver);
+  void Get_Motor(uint8_t ID,  Received &receiver);
   void Set_MotorMode(uint8_t Mode, uint8_t ID);
   void Set_MotorID(uint8_t ID);
-  void Check_Motor(Receiver *Receiver);
+  void Check_Motor(Received &receiver);
   void Send_Motor(void);
   void Receive_Motor(void);
   unsigned char CRC8_Table(unsigned char *p, int counter);

@@ -37,22 +37,30 @@
 #define VELOCITY_LOOP_MODE 0x02
 #define ANGLE_LOOP_MODE 0x03
 
-int open_port(void);
-
-void configure_port(const int fd);
+struct MotorStatus
+{
+  uint8_t id;
+  uint8_t mode;
+  int speed;
+  int position;
+  double current;
+};
 
 namespace ddt_m06_interface
 {
-
 class ddtM06Handler
 {
 public:
   ddtM06Handler(const std::string&);
   ~ddtM06Handler();
 
-  void drive_motor(const uint8_t, const int16_t);
+  int drive_motor(const uint8_t, const int16_t, MotorStatus&);
   void get_motor(const uint8_t);
-  void switch_mode(const int);
+  void switch_mode(const uint8_t, const uint8_t);
+
+  float output2current(const uint16_t);
+  int16_t output2velocity(const int16_t);
+  uint16_t output2angle(const int16_t);
 
 private:
   int open_port(const std::string&);
@@ -61,9 +69,7 @@ private:
   int16_t current2input(const int);
   int16_t velocity2input(const int);
 
-  float output2current(const uint16_t);
-  int16_t output2velocity(const int16_t);
-  uint16_t output2angle(const int16_t);
+
 
   int fd_;
   int current_mode_ = VELOCITY_LOOP_MODE;

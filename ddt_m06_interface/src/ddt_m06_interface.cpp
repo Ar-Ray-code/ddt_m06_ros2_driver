@@ -25,6 +25,11 @@ ddtM06Handler::ddtM06Handler(const std::string &port_name)
   this->motor_handler_ = std::make_shared<MotorHandler>(this->fd_);
 }
 
+ddtM06Handler::~ddtM06Handler()
+{
+  close(this->fd_);
+}
+
 int ddtM06Handler::open_port(const std::string &port_name)
 {
   int fd = open(port_name.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
@@ -63,24 +68,37 @@ void ddtM06Handler::configure_port(int fd)
   }
 }
 
-void ddtM06Handler::drive_motor(const uint8_t id, const int16_t value)
+int ddtM06Handler::drive_motor(const uint8_t id, const int16_t value, MotorStatus &motor_status)
 {
   uint8_t Acc = 0;
   uint8_t Brake_P = 0;
-  Receiver received_data;
+  Receiver receiver;
 
   switch (this->current_mode_)
   {
   case CURRENT_LOOP_MODE:
-    this->motor_handler_->Control_Motor(this->current2input(value), id, Acc, Brake_P, &received_data);
+    this->motor_handler_->Control_Motor(this->current2input(value), id, Acc, Brake_P, receiver);
     break;
   case VELOCITY_LOOP_MODE:
-    this->motor_handler_->Control_Motor(this->velocity2input(value), id, Acc, Brake_P, &received_data);
+    this->motor_handler_->Control_Motor(this->velocity2input(value), id, Acc, Brake_P, receiver);
     break;
   case ANGLE_LOOP_MODE:
-    this->motor_handler_->Control_Motor(this->angle2input(value), id, Acc, Brake_P, &received_data);
+    this->motor_handler_->Control_Motor(this->angle2input(value), id, Acc, Brake_P, receiver);
     break;
   }
+
+
+
+  if (!receiver.ErrCode)
+  {
+    motor_status.id = id;
+    motor_status.mode = receiver.BMode;
+    motor_status.speed = output2velocity(receiver.BSpeed);
+    motor_status.position = output2angle(receiver.Position);
+    motor_status.current = output2current(receiver.ECurrent);
+    return 0;
+  }
+  return -1;
 }
 
 
@@ -112,7 +130,7 @@ int16_t ddtM06Handler::velocity2input(const int velocity)
 }
 
 // output data ============================
-float output2current(const uint16_t data)
+float ddtM06Handler::output2current(const uint16_t data)
 {
   // 0x40
   if (data > 0x4000)
@@ -140,9 +158,10 @@ uint16_t ddtM06Handler::output2angle(const int16_t data)
   return (uint16_t)(data * 360 / 32767);
 }
 
-void ddtM06Handler::switch_mode(const int mode)
+void ddtM06Handler::switch_mode(const uint8_t id, const uint8_t mode)
 {
   this->current_mode_ = mode;
+  this->motor_handler_->Set_MotorMode(mode, id);
 }
 
 } // namespace ddt_m06_interface
