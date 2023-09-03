@@ -33,12 +33,12 @@ int main(int argc, char ** argv)
   auto ddt = std::make_shared<ddt_m06_interface::ddtM06Handler>(port_name);
   MotorStatus motor_status;
 
-  ddt->switch_mode(TARGET_ID, ANGLE_LOOP_MODE);
+  ddt->switch_mode(TARGET_ID, VELOCITY_LOOP_MODE);
 
   ddt->drive_motor(TARGET_ID, 0, motor_status);
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-  for (int i = 0; i < 90; i++) {
+  for (int i = 0; i < 330; i++) {
     if (ddt->drive_motor(TARGET_ID, i, motor_status)) {
       printf("error\n");
       continue;
@@ -46,31 +46,22 @@ int main(int argc, char ** argv)
     print_motor_status(motor_status);
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
   }
-
-  for (int i = 90; i < 180; i++) {
-    if (ddt->drive_motor(TARGET_ID, i, motor_status)) {
-      printf("error\n");
-      continue;
-    }
-    print_motor_status(motor_status);
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
-  }
-  for (int i = 180; i < 270; i++) {
-    if (ddt->drive_motor(TARGET_ID, i, motor_status)) {
-      printf("error\n");
-      continue;
-    }
-    print_motor_status(motor_status);
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
-  }
-  for (int i = 270; i > 0; i--) {
-    if (ddt->drive_motor(TARGET_ID, i, motor_status)) {
-      printf("error\n");
-      continue;
-    }
-    print_motor_status(motor_status);
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
-  }
+	for (int i = 330; i > -330; i--) {
+		if (ddt->drive_motor(TARGET_ID, i, motor_status)) {
+			printf("error\n");
+			continue;
+		}
+		print_motor_status(motor_status);
+		std::this_thread::sleep_for(std::chrono::milliseconds(20));
+	}
+	for (int i = -330; i < 0; i++) {
+		if (ddt->drive_motor(TARGET_ID, i, motor_status)) {
+			printf("error\n");
+			continue;
+		}
+		print_motor_status(motor_status);
+		std::this_thread::sleep_for(std::chrono::milliseconds(20));
+	}
 
   return EXIT_SUCCESS;
 }

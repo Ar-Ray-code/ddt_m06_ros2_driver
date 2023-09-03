@@ -13,6 +13,11 @@ ament_auto_add_executable(write_pos
   src/write_pos.cpp
 )
 
+# write_spd
+ament_auto_add_executable(write_spd
+  src/write_spd.cpp
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
